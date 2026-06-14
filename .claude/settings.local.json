@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn test:*)",
+      "Bash(where mvn:*)",
+      "Bash(ls D:/alicode/ali/repo-23/qwen1/mvnw*)",
+      "Read(//usr/**)",
+      "Bash(find /opt -name mvn)",
+      "Bash(where java:*)",
+      "Read(//c/Program Files/**)",
+      "Read(//c//**)",
+      "Bash(echo $MAVEN_HOME)",
+      "Bash(echo $M2_HOME)",
+      "Read(//c/Users/**)",
+      "Bash(curl -fsSL https://archive.apache.org/dist/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.zip -o /tmp/maven.zip)",
+      "Bash(unzip -qo /tmp/maven.zip -d /tmp/)",
+      "Read(//tmp/apache-maven-3.9.6/bin/**)",
+      "Bash(curl -fsSL https://archive.apache.org/dist/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.tar.gz -o /tmp/maven.tar.gz)",
+      "Bash(tar xzf:*)",
+      "Bash(export JAVA_HOME=\"/c/Program Files/Eclipse Adoptium/jdk-8.0.492.9-hotspot\")",
+      "Bash(/tmp/apache-maven-3.9.6/bin/mvn test:*)"
+    ]
+  }
+}
