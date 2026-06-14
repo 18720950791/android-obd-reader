@@ -4,6 +4,8 @@
 package eu.lighthouselabs.obd.reader.io;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -251,38 +253,74 @@ public class ObdGatewayService extends Service {
 
 		_isQueueRunning.set(true);
 
-		while (!_queue.isEmpty()) {
-			ObdCommandJob job = null;
-			try {
-				job = _queue.take();
+		/*
+		 * Capture the connection, its streams and the listener once. A
+		 * concurrent stopService() may null _sock/_callback while we run; using
+		 * local references keeps this loop NPE-safe and avoids notifying a
+		 * callback that has already been detached.
+		 */
+		BluetoothSocket sock = _sock;
+		IPostListener callback = _callback;
+		if (sock == null) {
+			_isQueueRunning.set(false);
+			return;
+		}
+
+		InputStream in;
+		OutputStream out;
+		try {
+			in = sock.getInputStream();
+			out = sock.getOutputStream();
+		} catch (Exception e) {
+			Log.e(TAG, "Failed to obtain connection streams. -> "
+			        + e.getMessage());
+			_isQueueRunning.set(false);
+			return;
+		}
+
+		try {
+			// Keep consuming while the service runs and there is work left.
+			while (_isRunning.get() && !_queue.isEmpty()) {
+				ObdCommandJob job = _queue.poll();
+				if (job == null) {
+					// queue was cleared concurrently (e.g. by stopService())
+					break;
+				}
 
 				// log job
 				Log.d(TAG, "Taking job[" + job.getId() + "] from queue..");
 
-				if (job.getState().equals(ObdCommandJobState.NEW)) {
-					Log.d(TAG, "Job state is NEW. Run it..");
+				try {
+					if (job.getState().equals(ObdCommandJobState.NEW)) {
+						Log.d(TAG, "Job state is NEW. Run it..");
 
-					job.setState(ObdCommandJobState.RUNNING);
-					job.getCommand().run(_sock.getInputStream(),
-					        _sock.getOutputStream());
-				} else {
-					// log not new job
-					Log.e(TAG,
-					        "Job state was not new, so it shouldn't be in queue. BUG ALERT!");
+						job.setState(ObdCommandJobState.RUNNING);
+						job.getCommand().run(in, out);
+					} else {
+						// log not new job
+						Log.e(TAG,
+						        "Job state was not new, so it shouldn't be in queue. BUG ALERT!");
+					}
+				} catch (Exception e) {
+					job.setState(ObdCommandJobState.EXECUTION_ERROR);
+					Log.e(TAG, "Failed to run command. -> " + e.getMessage());
 				}
-			} catch (Exception e) {
-				job.setState(ObdCommandJobState.EXECUTION_ERROR);
-				Log.e(TAG, "Failed to run command. -> " + e.getMessage());
-			}
 
-			if (job != null) {
-				Log.d(TAG, "Job is finished.");
 				job.setState(ObdCommandJobState.FINISHED);
-				_callback.stateUpdate(job);
-			}
-		}
 
-		_isQueueRunning.set(false);
+				/*
+				 * Only notify while still running. A job dequeued before
+				 * stopService() ran must not call back into the detached
+				 * listener.
+				 */
+				if (_isRunning.get() && callback != null) {
+					Log.d(TAG, "Job is finished.");
+					callback.stateUpdate(job);
+				}
+			}
+		} finally {
+			_isQueueRunning.set(false);
+		}
 	}
 
 	/**
@@ -315,17 +353,39 @@ public class ObdGatewayService extends Service {
 	public void stopService() {
 		Log.d(TAG, "Stopping service..");
 
-		clearNotification();
-		_queue.removeAll(_queue); // TODO is this safe?
-		_isQueueRunning.set(false);
-		_callback = null;
+		/*
+		 * Flip the running flag first so an in-flight _executeQueue() loop stops
+		 * consuming and, crucially, stops notifying the about-to-be-detached
+		 * listener for jobs it has already dequeued.
+		 */
 		_isRunning.set(false);
+		_isQueueRunning.set(false);
 
-		// close socket
-		try {
-			_sock.close();
-		} catch (IOException e) {
-			Log.e(TAG, e.getMessage());
+		// Drop pending jobs. clear() -- removeAll(self) is unspecified.
+		_queue.clear();
+
+		/*
+		 * Close the socket and release the reference so a later start can open a
+		 * fresh connection. _sock is null when no device was selected or the
+		 * connection failed before it was assigned, so guard against NPE.
+		 */
+		BluetoothSocket sock = _sock;
+		_sock = null;
+		if (sock != null) {
+			try {
+				sock.close();
+			} catch (IOException e) {
+				Log.e(TAG, "Failed to close Bluetooth socket. -> "
+				        + e.getMessage());
+			}
+		}
+
+		// Detach the listener now that the queue loop can no longer use it.
+		_callback = null;
+
+		// Cancel notification (guard contexts where onCreate did not run).
+		if (_notifManager != null) {
+			clearNotification();
 		}
 
 		// kill service

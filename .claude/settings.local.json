@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn -v)",
+      "Bash(command -v java)",
+      "Bash(java -version)",
+      "Read(//d/alicode/ali/repo-23/claude2/**)",
+      "Bash(command -v mvn mvn.cmd mvn.bat)",
+      "Bash(echo JAVA_HOME=$JAVA_HOME)",
+      "Bash(echo M2_HOME=$M2_HOME)",
+      "Bash(echo MAVEN_HOME=$MAVEN_HOME echo '=== windows where ===')",
+      "Bash(echo ANDROID_HOME=$ANDROID_HOME)",
+      "Bash(echo ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT)",
+      "Bash(MVN=$HOME/.m2/wrapper/dists/apache-maven-3.9.16/0daed3be3ebd1c706f0e69e8b07c6b73f5cc4ea3dfce72a8d0ec2e849ca2ddb0/bin/mvn)",
+      "Bash($MVN -v)",
+      "Read(//c/Users/ouyang/.m2/repository/com/google/**)",
+      "Read(//c/Users/ouyang/.m2/repository/org/**)",
+      "Bash(MVN=/c/Users/ouyang/.m2/wrapper/dists/apache-maven-3.9.16/0daed3be3ebd1c706f0e69e8b07c6b73f5cc4ea3dfce72a8d0ec2e849ca2ddb0/bin/mvn \"$MVN\" -s ~/.m2/settings.xml -pl obd-api test)",
+      "Bash(MVN=/c/Users/ouyang/.m2/wrapper/dists/apache-maven-3.9.16/0daed3be3ebd1c706f0e69e8b07c6b73f5cc4ea3dfce72a8d0ec2e849ca2ddb0/bin/mvn echo \"ANDROID_HOME=[$ANDROID_HOME]\" echo \"ANDROID_SDK_ROOT=[$ANDROID_SDK_ROOT]\" echo \"=== attempting obd-reader build ===\" \"$MVN\" -s ~/.m2/settings.xml -pl obd-reader -am test)",
+      "Read(//d/alicode/ali/repo-23/claude2/=== search for any nullwire/**)",
+      "Bash(find D:/alicode/ali/repo-23/claude2 -iname *trace*1.1*)",
+      "Bash(find D:/alicode/ali/repo-23/claude2 -ipath *nullwire* 2)",
+      "Bash(/dev/null echo:*)",
+      "Read(//c/Users/ouyang/.m2/repository/com/nullwire/**)",
+      "Bash(MVN=/c/Users/ouyang/.m2/wrapper/dists/apache-maven-3.9.16/0daed3be3ebd1c706f0e69e8b07c6b73f5cc4ea3dfce72a8d0ec2e849ca2ddb0/bin/mvn \"$MVN\" -s ~/.m2/settings.xml -o -pl obd-reader -am test)",
+      "Read(//c/Users/ouyang/.m2/wrapper/dists/**)",
+      "Bash(1 echo:*)"
+    ]
+  }
+}
